@@ -263,45 +263,45 @@ def stream_upload():
 
 
     uploaded_file = st.file_uploader("Choose a file")
+    if uploaded_file is not None:
+        sound = pydub.AudioSegment.from_wav(uploaded_file)
+        sound = sound.set_channels(1).set_frame_rate(16000)
+        audio = np.array(sound.get_array_of_samples())/32768
 
-    sound = pydub.AudioSegment.from_wav(uploaded_file)
-    sound = sound.set_channels(1).set_frame_rate(16000)
-    audio = np.array(sound.get_array_of_samples())/32768
-
-    last_rows = np.zeros((1,1))
-    chart = st.line_chart(last_rows)
-    text_output = st.empty()
+        last_rows = np.zeros((1,1))
+        chart = st.line_chart(last_rows)
+        text_output = st.empty()
 
 
-    streaming_decoder = StreamingDecoder(model)
-    frame_number = 0
+        streaming_decoder = StreamingDecoder(model)
+        frame_number = 0
 
-    #p = multiprocessing.Process(target=playsound.playsound, args=(file_name,)) 
+        #p = multiprocessing.Process(target=playsound.playsound, args=(file_name,)) 
 
-    #play_obj = wave_obj.play()
+        #play_obj = wave_obj.play()
 
-    start_0 = timeit.default_timer()
-    was_clicked = my_component("test", key="foo")
-    
-    if was_clicked:
-        for i in range(0, len(audio), 1000):
-            # while (num_clicks%2 == 0):
-            #     time.sleep(0.1)
-            start = timeit.default_timer()
-            
-            for probs in streaming_decoder.process_audio(audio[i: i+1000]):
-                new_rows = np.zeros((1, 1))
-                new_rows[0,0] = probs[1].detach().numpy()
-                chart.add_rows(new_rows)
-
+        start_0 = timeit.default_timer()
+        was_clicked = my_component("test", key="foo")
+        
+        if was_clicked:
+            for i in range(0, len(audio), 1000):
+                # while (num_clicks%2 == 0):
+                #     time.sleep(0.1)
+                start = timeit.default_timer()
                 
-                frame_number += 1
+                for probs in streaming_decoder.process_audio(audio[i: i+1000]):
+                    new_rows = np.zeros((1, 1))
+                    new_rows[0,0] = probs[1].detach().numpy()
+                    chart.add_rows(new_rows)
+
+                    
+                    frame_number += 1
 
 
-            end = timeit.default_timer()
-            # text_output.markdown(f"{end-start_0} seconds")
-            time.sleep(max(0,1/16-end+start))
-        # st.button("Re-run")
+                end = timeit.default_timer()
+                # text_output.markdown(f"{end-start_0} seconds")
+                time.sleep(max(0,1/16-end+start))
+            # st.button("Re-run")
 
 def main():
     
