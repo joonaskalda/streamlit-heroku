@@ -68,7 +68,7 @@ else:
     build_dir = os.path.join(parent_dir, "frontend/build")
     _component_func = components.declare_component("my_component", path=build_dir)
 
-
+model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
 # Create a wrapper function for the component. This is an optional
 # best practice - we could simply expose the component function returned by
 # `declare_component` and call it done. The wrapper allows us to customize
@@ -114,7 +114,7 @@ def my_component(name, key=None):
 def stream_sample():
 
 
-    st.subheader("Component with variable args")
+    st.subheader("Streaming a sample .wav")
 
     # Create a second instance of our component whose `name` arg will vary
     # based on a text_input widget.
@@ -126,7 +126,7 @@ def stream_sample():
     # "name" argument without having it get recreated.
     name_input = st.text_input("Enter a name", value="Streamlit")
 
-    model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
+
     file_name = "template/my_component/frontend/src/audio/3321821.wav"
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
@@ -192,7 +192,6 @@ def stream_mic():
 
     last_rows = np.zeros((1,1))
     chart = st.line_chart(last_rows)
-    model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
     streaming_decoder = StreamingDecoder(model)
     frame_number = 0
     status_indicator.write("Model loaded.")
@@ -247,15 +246,75 @@ def stream_mic():
             status_indicator.write("AudioReciver is not set. Abort.")
             break
 
+
+def stream_upload():
+
+    st.subheader("Streaming an upload")
+
+    # Create a second instance of our component whose `name` arg will vary
+    # based on a text_input widget.
+    #
+    # We use the special "key" argument to assign a fixed identity to this
+    # component instance. By default, when a component's arguments change,
+    # it is considered a new instance and will be re-mounted on the frontend
+    # and lose its current state. In this case, we want to vary the component's
+    # "name" argument without having it get recreated.
+    name_input = st.text_input("Enter a name", value="Streamlit")
+
+
+    uploaded_file = st.file_uploader("Choose a file")
+
+    sound = pydub.AudioSegment.from_wav(uploaded_file)
+    sound = sound.set_channels(1).set_frame_rate(16000)
+    audio = np.array(sound.get_array_of_samples())/32768
+
+    last_rows = np.zeros((1,1))
+    chart = st.line_chart(last_rows)
+    text_output = st.empty()
+
+
+    streaming_decoder = StreamingDecoder(model)
+    frame_number = 0
+
+    #p = multiprocessing.Process(target=playsound.playsound, args=(file_name,)) 
+
+    #play_obj = wave_obj.play()
+
+    start_0 = timeit.default_timer()
+    was_clicked = my_component("test", key="foo")
+    
+    if was_clicked:
+        for i in range(0, len(audio), 1000):
+            # while (num_clicks%2 == 0):
+            #     time.sleep(0.1)
+            start = timeit.default_timer()
+            
+            for probs in streaming_decoder.process_audio(audio[i: i+1000]):
+                new_rows = np.zeros((1, 1))
+                new_rows[0,0] = probs[1].detach().numpy()
+                chart.add_rows(new_rows)
+
+                
+                frame_number += 1
+
+
+            end = timeit.default_timer()
+            # text_output.markdown(f"{end-start_0} seconds")
+            time.sleep(max(0,1/16-end+start))
+        # st.button("Re-run")
+
 def main():
+    
     option = st.selectbox(
         'Which audio source would you like to use?',
-        ('microphone', 'sample wav (osoon)'), 0)
+        ('microphone', 'sample wav (osoon)', 'upload'), 0)
     if option == 'sample wav (osoon)':
         file_name = "3321821.wav"
         stream_sample()
     elif option == 'microphone':
         stream_mic()
+    elif option == 'upload':
+        stream_upload()
     
 
 if __name__ == "__main__":
