@@ -127,10 +127,8 @@ if __name__ == "__main__":
     # "name" argument without having it get recreated.
     name_input = st.text_input("Enter a name", value="Streamlit")
 
-
+    model = SCDModel.load_from_checkpoint("test/sample_model/checkpoints/epoch=102.ckpt")
     file_name = "frontend/src/audio/3321821.wav"
-    list_subfolders_with_paths = [f.path for f in os.scandir(os.path) if f.is_dir()]
-    st.text(f"{list_subfolders_with_paths}")
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
     audio = np.array(sound.get_array_of_samples())/32768
@@ -139,7 +137,6 @@ if __name__ == "__main__":
     chart = st.line_chart(last_rows)
     text_output = st.empty()
 
-    model = SCDModel.load_from_checkpoint("test/sample_model/checkpoints/epoch=102.ckpt")
 
     streaming_decoder = StreamingDecoder(model)
     frame_number = 0
