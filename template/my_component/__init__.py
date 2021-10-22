@@ -36,7 +36,7 @@ from streamlit_webrtc import (
 # the component, and True when we're ready to package and distribute it.
 # (This is, of course, optional - there are innumerable ways to manage your
 # release process.)
-_RELEASE = False
+_RELEASE = True
 
 # Declare a Streamlit component. `declare_component` returns a function
 # that is used to create instances of the component. We're naming this
@@ -111,7 +111,7 @@ def my_component(name, key=None):
 # Add some test code to play with the component while it's in development.
 # During development, we can run this just as we would any other Streamlit
 # app: `$ streamlit run my_component/__init__.py`
-if not _RELEASE:
+if __name__ == "__main__":
     import streamlit as st
 
 
@@ -128,7 +128,7 @@ if not _RELEASE:
     name_input = st.text_input("Enter a name", value="Streamlit")
 
 
-    file_name = "./frontend/src/audio/3321821.wav"
+    file_name = "frontend/src/audio/3321821.wav"
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
     audio = np.array(sound.get_array_of_samples())/32768
