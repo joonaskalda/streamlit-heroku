@@ -180,7 +180,7 @@ def stream_mic():
         ),
     )
 
-
+    st.subheader("Streaming from microphone")
     status_indicator = st.empty()
 
     if not webrtc_ctx.state.playing:
@@ -259,7 +259,7 @@ def stream_upload():
     # it is considered a new instance and will be re-mounted on the frontend
     # and lose its current state. In this case, we want to vary the component's
     # "name" argument without having it get recreated.
-    name_input = st.text_input("Enter a name", value="Streamlit")
+    # name_input = st.text_input("Enter a name", value="Streamlit")
 
 
     uploaded_file = st.file_uploader("Choose a file")
@@ -307,7 +307,7 @@ def main():
     
     option = st.selectbox(
         'Which audio source would you like to use?',
-        ('microphone', 'sample wav (osoon)', 'upload'), 0)
+        ('sample wav (osoon)','microphone', 'upload'), 0)
     if option == 'sample wav (osoon)':
         file_name = "3321821.wav"
         stream_sample()
