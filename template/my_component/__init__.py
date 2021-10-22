@@ -168,6 +168,8 @@ def stream_sample():
         # st.button("Re-run")
 
 def stream_mic():
+    st.subheader("Streaming from microphone")
+
     webrtc_ctx = webrtc_streamer(
         key="speech-to-text",
         mode=WebRtcMode.SENDONLY,
@@ -180,7 +182,7 @@ def stream_mic():
         ),
     )
 
-    st.subheader("Streaming from microphone")
+    
     status_indicator = st.empty()
 
     if not webrtc_ctx.state.playing:
