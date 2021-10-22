@@ -80,3 +80,4 @@ These templates are provided by the community. If you run into any issues, pleas
 * [Streamlit Components documentation](https://docs.streamlit.io/en/stable/streamlit_components.html)
 * [Streamlit Forums](https://discuss.streamlit.io/tag/custom-components)
 * [Streamlit Components gallery](https://www.streamlit.io/components)
+# streamlit-heroku
