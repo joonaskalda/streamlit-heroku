@@ -127,8 +127,8 @@ if __name__ == "__main__":
     # "name" argument without having it get recreated.
     name_input = st.text_input("Enter a name", value="Streamlit")
 
-    model = SCDModel.load_from_checkpoint("test/sample_model/checkpoints/epoch=102.ckpt")
-    file_name = "frontend/src/audio/3321821.wav"
+    model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
+    file_name = "template/my_component/frontend/src/audio/3321821.wav"
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
     audio = np.array(sound.get_array_of_samples())/32768
