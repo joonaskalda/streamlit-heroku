@@ -1,6 +1,37 @@
 import os
 import streamlit.components.v1 as components
 
+import streamlit as st
+import time
+import numpy as np
+import IPython.display as ipd
+#ipd.Audio(audio, rate=16000)
+
+from online_scd.model import SCDModel
+from online_scd.streaming import StreamingDecoder
+import timeit
+
+
+from online_scd.utils import load_wav_file
+
+import multiprocessing
+#import playsound
+
+import queue
+import time
+from typing import List
+
+import numpy as np
+import pydub
+from pydub.playback import play
+import streamlit as st
+
+from streamlit_webrtc import (
+    ClientSettings,
+    WebRtcMode,
+    webrtc_streamer,
+)
+
 # Create a _RELEASE constant. We'll set this to False while we're developing
 # the component, and True when we're ready to package and distribute it.
 # (This is, of course, optional - there are innumerable ways to manage your
@@ -83,14 +114,7 @@ def my_component(name, key=None):
 if not _RELEASE:
     import streamlit as st
 
-    st.subheader("Component with constant args")
 
-    # Create an instance of our component with a constant `name` arg, and
-    # print its output value.
-    num_clicks = my_component("World")
-    st.markdown("You've clicked %s times!" % int(num_clicks))
-
-    st.markdown("---")
     st.subheader("Component with variable args")
 
     # Create a second instance of our component whose `name` arg will vary
@@ -102,5 +126,45 @@ if not _RELEASE:
     # and lose its current state. In this case, we want to vary the component's
     # "name" argument without having it get recreated.
     name_input = st.text_input("Enter a name", value="Streamlit")
-    num_clicks = my_component(name_input, key="foo")
-    st.markdown("You've clicked %s times!" % int(num_clicks))
+
+
+    file_name = "./frontend/src/audio/3321821.wav"
+    sound = pydub.AudioSegment.from_wav(file_name)
+    sound = sound.set_channels(1).set_frame_rate(16000)
+    audio = np.array(sound.get_array_of_samples())/32768
+
+    last_rows = np.zeros((1,1))
+    chart = st.line_chart(last_rows)
+    text_output = st.empty()
+
+    model = SCDModel.load_from_checkpoint("test/sample_model/checkpoints/epoch=102.ckpt")
+
+    streaming_decoder = StreamingDecoder(model)
+    frame_number = 0
+
+    #p = multiprocessing.Process(target=playsound.playsound, args=(file_name,)) 
+
+    #play_obj = wave_obj.play()
+
+    start_0 = timeit.default_timer()
+    was_clicked = my_component("test", key="foo")
+    
+    if was_clicked:
+        for i in range(0, len(audio), 1000):
+            # while (num_clicks%2 == 0):
+            #     time.sleep(0.1)
+            start = timeit.default_timer()
+            
+            for probs in streaming_decoder.process_audio(audio[i: i+1000]):
+                new_rows = np.zeros((1, 1))
+                new_rows[0,0] = probs[1].detach().numpy()
+                chart.add_rows(new_rows)
+
+                
+                frame_number += 1
+
+
+            end = timeit.default_timer()
+            # text_output.markdown(f"{end-start_0} seconds")
+            time.sleep(max(0,1/16-end+start))
+        # st.button("Re-run")
