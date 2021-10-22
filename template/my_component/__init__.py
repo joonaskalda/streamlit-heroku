@@ -192,8 +192,7 @@ def stream_mic():
 
     last_rows = np.zeros((1,1))
     chart = st.line_chart(last_rows)
-
-    model = SCDModel.load_from_checkpoint("test/sample_model/checkpoints/epoch=102.ckpt")
+    model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
     streaming_decoder = StreamingDecoder(model)
     frame_number = 0
     status_indicator.write("Model loaded.")
