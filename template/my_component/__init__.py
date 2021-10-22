@@ -36,7 +36,7 @@ from streamlit_webrtc import (
 # the component, and True when we're ready to package and distribute it.
 # (This is, of course, optional - there are innumerable ways to manage your
 # release process.)
-_RELEASE = True
+_RELEASE = False
 
 # Declare a Streamlit component. `declare_component` returns a function
 # that is used to create instances of the component. We're naming this
@@ -60,6 +60,8 @@ if not _RELEASE:
         # (This is useful while your component is in development.)
         url="http://localhost:3001",
     )
+    model = SCDModel.load_from_checkpoint("test/sample_model/checkpoints/epoch=102.ckpt")
+    file_name = "frontend/src/audio/3321821.wav"
 else:
     # When we're distributing a production version of the component, we'll
     # replace the `url` param with `path`, and point it to to the component's
@@ -68,7 +70,8 @@ else:
     build_dir = os.path.join(parent_dir, "frontend/build")
     _component_func = components.declare_component("my_component", path=build_dir)
 
-model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
+    model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
+    file_name = "template/my_component/frontend/src/audio/3321821.wav"
 # Create a wrapper function for the component. This is an optional
 # best practice - we could simply expose the component function returned by
 # `declare_component` and call it done. The wrapper allows us to customize
@@ -113,7 +116,6 @@ def my_component(name, key=None):
 # app: `$ streamlit run my_component/__init__.py`
 def stream_sample():
 
-
     st.subheader("Streaming a sample .wav")
 
     # Create a second instance of our component whose `name` arg will vary
@@ -124,10 +126,7 @@ def stream_sample():
     # it is considered a new instance and will be re-mounted on the frontend
     # and lose its current state. In this case, we want to vary the component's
     # "name" argument without having it get recreated.
-    name_input = st.text_input("Enter a name", value="Streamlit")
-
-
-    file_name = "template/my_component/frontend/src/audio/3321821.wav"
+    
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
     audio = np.array(sound.get_array_of_samples())/32768
@@ -143,7 +142,7 @@ def stream_sample():
     #p = multiprocessing.Process(target=playsound.playsound, args=(file_name,)) 
 
     #play_obj = wave_obj.play()
-
+    
     start_0 = timeit.default_timer()
     was_clicked = my_component("test", key="foo")
     
@@ -311,7 +310,7 @@ def main():
         'Which audio source would you like to use?',
         ('sample wav (osoon)','microphone', 'upload'), 0)
     if option == 'sample wav (osoon)':
-        file_name = "3321821.wav"
+        #file_name = "3321821.wav"
         stream_sample()
     elif option == 'microphone':
         stream_mic()
