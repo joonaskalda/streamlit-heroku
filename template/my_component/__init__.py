@@ -129,6 +129,8 @@ if __name__ == "__main__":
 
 
     file_name = "frontend/src/audio/3321821.wav"
+    list_subfolders_with_paths = [f.path for f in os.scandir(path) if f.is_dir()]
+    st.text(f"{list_subfolders_with_paths}")
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
     audio = np.array(sound.get_array_of_samples())/32768
