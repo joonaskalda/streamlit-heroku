@@ -11,6 +11,8 @@ from online_scd.model import SCDModel
 from online_scd.streaming import StreamingDecoder
 import timeit
 
+import base64
+
 
 from online_scd.utils import load_wav_file
 
@@ -36,7 +38,7 @@ from streamlit_webrtc import (
 # the component, and True when we're ready to package and distribute it.
 # (This is, of course, optional - there are innumerable ways to manage your
 # release process.)
-_RELEASE = True
+_RELEASE = False
 
 # Declare a Streamlit component. `declare_component` returns a function
 # that is used to create instances of the component. We're naming this
@@ -58,10 +60,10 @@ if not _RELEASE:
         # Pass `url` here to tell Streamlit that the component will be served
         # by the local dev server that you run via `npm run start`.
         # (This is useful while your component is in development.)
-        url="http://localhost:8080",
+        url="http://localhost:3001",
     )
-    model = SCDModel.load_from_checkpoint("test/sample_model/checkpoints/epoch=102.ckpt")
-    file_name = "frontend/src/audio/3321821.wav"
+    model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
+    file_name = "template/my_component/frontend/src/audio/3321821.wav"
 else:
     # When we're distributing a production version of the component, we'll
     # replace the `url` param with `path`, and point it to to the component's
@@ -77,7 +79,7 @@ else:
 # `declare_component` and call it done. The wrapper allows us to customize
 # our component's API: we can pre-process its input args, post-process its
 # output value, and add a docstring for users.
-def my_component(name, key=None):
+def my_component(name, audio, key=None):
     """Create a new instance of "my_component".
 
     Parameters
@@ -104,7 +106,7 @@ def my_component(name, key=None):
     #
     # "default" is a special argument that specifies the initial return
     # value of the component before the user has interacted with it.
-    component_value = _component_func(name=name, key=key, default=0)
+    component_value = _component_func(name=name, audio=audio, key=key, default=0)
 
     # We could modify the value returned from the component if we wanted.
     # There's no need to do this in our simple example - but it's an option.
@@ -130,7 +132,7 @@ def stream_sample():
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
     audio = np.array(sound.get_array_of_samples())/32768
-
+    enc=base64.b64encode(open(file_name, "rb").read())
     last_rows = np.zeros((1,1))
     chart = st.line_chart(last_rows)
     text_output = st.empty()
@@ -144,7 +146,7 @@ def stream_sample():
     #play_obj = wave_obj.play()
     
     start_0 = timeit.default_timer()
-    was_clicked = my_component("test", key="foo")
+    was_clicked = my_component(name="test", audio = str(enc), key="foo")
     
     if was_clicked:
         for i in range(0, len(audio), 1000):
@@ -282,7 +284,7 @@ def stream_upload():
         #play_obj = wave_obj.play()
 
         start_0 = timeit.default_timer()
-        was_clicked = my_component("test", key="foo")
+        was_clicked = my_component(name="test",audio=audio.tolist(), key="foo")
         
         if was_clicked:
             for i in range(0, len(audio), 1000):

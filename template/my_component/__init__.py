@@ -60,8 +60,8 @@ if not _RELEASE:
         # (This is useful while your component is in development.)
         url="http://localhost:8080",
     )
-    model = SCDModel.load_from_checkpoint("test/sample_model/checkpoints/epoch=102.ckpt")
-    file_name = "frontend/src/audio/3321821.wav"
+    model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
+    file_name = "template/my_component/frontend/src/audio/3321821.wav"
 else:
     # When we're distributing a production version of the component, we'll
     # replace the `url` param with `path`, and point it to to the component's
