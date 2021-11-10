@@ -36,7 +36,7 @@ from streamlit_webrtc import (
 # the component, and True when we're ready to package and distribute it.
 # (This is, of course, optional - there are innumerable ways to manage your
 # release process.)
-_RELEASE = False
+_RELEASE = True
 
 # Declare a Streamlit component. `declare_component` returns a function
 # that is used to create instances of the component. We're naming this
@@ -305,16 +305,22 @@ def stream_upload():
             # st.button("Re-run")
 
 def main():
-    
+    st.header("Demo of Collar-Aware Training for Speaker Change Detection")
+    st.markdown("The model uses a multi-layer LSTM on top of pre-trained speech embeddings, and a final softmax layer. The model uses a step size of 100 ms (i.e., it outputs 10 decisions per second). The model is implemented in Pytorch while this demo was built using Streamlit.")
+    st.markdown("The model is trained using a special version of cross-entropy training which tolerates small errors in the hypothesized speaker change timestamps. Due to this, the softmax outputs of the trained model are very peaky and do not require any local maxima tracking for extracting the final speaker turn points. This makes the model suitable for online appications.")
+    st.markdown("This demo visualizes the output of the model for an audio source. The audio source can be either a sample file, a microphone or an uploaded file.")
+    option_1 = 'A sample file'
+    option_2 = 'A microphone'
+    option_3 = 'An uploaded .wav file'
     option = st.selectbox(
         'Which audio source would you like to use?',
-        ('sample wav (osoon)','microphone', 'upload'), 0)
-    if option == 'sample wav (osoon)':
+        (option_1,option_2,option_3), 0)
+    if option == option_1:
         #file_name = "3321821.wav"
         stream_sample()
-    elif option == 'microphone':
+    elif option == option_2:
         stream_mic()
-    elif option == 'upload':
+    elif option == option_3:
         stream_upload()
     
 
