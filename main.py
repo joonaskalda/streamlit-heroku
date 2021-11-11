@@ -12,7 +12,7 @@ from online_scd.streaming import StreamingDecoder
 import timeit
 
 import base64
-
+import scipy.io.wavfile
 
 from online_scd.utils import load_wav_file
 
@@ -33,13 +33,14 @@ from streamlit_webrtc import (
     WebRtcMode,
     webrtc_streamer,
 )
-
+from pathlib import Path
+import os, time, sys
 # Create a _RELEASE constant. We'll set this to False while we're developing
 # the component, and True when we're ready to package and distribute it.
 # (This is, of course, optional - there are innumerable ways to manage your
 # release process.)
 _RELEASE = False
-
+upload_counter = 0
 # Declare a Streamlit component. `declare_component` returns a function
 # that is used to create instances of the component. We're naming this
 # function "_component_func", with an underscore prefix, because we don't want
@@ -63,7 +64,9 @@ if not _RELEASE:
         url="http://localhost:3001",
     )
     model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
+    #file_path = "template/my_component/frontend/src/audio"
     file_name = "template/my_component/frontend/src/audio/3321821.wav"
+    build_dir = "template/my_component/frontend/src"
 else:
     # When we're distributing a production version of the component, we'll
     # replace the `url` param with `path`, and point it to to the component's
@@ -73,7 +76,9 @@ else:
     _component_func = components.declare_component("my_component", path=build_dir)
 
     model = SCDModel.load_from_checkpoint("template/my_component/test/sample_model/checkpoints/epoch=102.ckpt")
+    #file_path = "template/my_component/frontend/src/audio"
     file_name = "template/my_component/frontend/src/audio/3321821.wav"
+
 # Create a wrapper function for the component. This is an optional
 # best practice - we could simply expose the component function returned by
 # `declare_component` and call it done. The wrapper allows us to customize
@@ -132,7 +137,7 @@ def stream_sample():
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
     audio = np.array(sound.get_array_of_samples())/32768
-    enc=base64.b64encode(open(file_name, "rb").read())
+    #enc=base64.b64encode(open(file_name, "rb").read())
     last_rows = np.zeros((1,1))
     chart = st.line_chart(last_rows)
     text_output = st.empty()
@@ -146,7 +151,7 @@ def stream_sample():
     #play_obj = wave_obj.play()
     
     start_0 = timeit.default_timer()
-    was_clicked = my_component(name="test", audio = str(enc), key="foo")
+    was_clicked = my_component(name="test", audio = "sample", key="foo")
     
     if was_clicked:
         for i in range(0, len(audio), 1000):
@@ -251,6 +256,7 @@ def stream_mic():
 
 
 def stream_upload():
+    #global upload_counter
 
     st.subheader("Streaming an upload")
 
@@ -267,10 +273,28 @@ def stream_upload():
 
     uploaded_file = st.file_uploader("Choose a file")
     if uploaded_file is not None:
+        #upload_counter+=1
+        path = build_dir + "/audio"
+        current_uploads = []
+        for f in os.listdir(path):
+            current_uploads.append(f.split(".")[0])
+        i = 0
+        while True:
+            if str(i) not in current_uploads:
+                new_name = str(i)
+                break
+            i+=1
+
         sound = pydub.AudioSegment.from_wav(uploaded_file)
         sound = sound.set_channels(1).set_frame_rate(16000)
+        #only consider first minute of the file for uploads
+        sound = sound[:60*1000]
         audio = np.array(sound.get_array_of_samples())/32768
 
+        file_name = new_name + ".wav"
+        save_location = build_dir +"/audio/"+ file_name
+        sound.export(save_location, format="wav")
+       
         last_rows = np.zeros((1,1))
         chart = st.line_chart(last_rows)
         text_output = st.empty()
@@ -284,7 +308,7 @@ def stream_upload():
         #play_obj = wave_obj.play()
 
         start_0 = timeit.default_timer()
-        was_clicked = my_component(name="test",audio=audio.tolist(), key="foo")
+        was_clicked = my_component(name="test",audio = file_name, key="foo")
         
         if was_clicked:
             for i in range(0, len(audio), 1000):
@@ -305,6 +329,7 @@ def stream_upload():
                 # text_output.markdown(f"{end-start_0} seconds")
                 time.sleep(max(0,1/16-end+start))
             # st.button("Re-run")
+        #os.remove(save_location)
 
 def main():
     st.header("Demo of Collar-Aware Training for Speaker Change Detection")
@@ -324,6 +349,17 @@ def main():
         stream_mic()
     elif option == option_3:
         stream_upload()
+
+    path = build_dir + "/audio"
+    now = time.time()
+    
+    for f in os.listdir(path):
+        if f!="3321821.wav" and f[-3:] == "wav":
+            f = os.path.join(path, f)
+            if os.stat(f).st_mtime < now - 3600:
+                if os.path.isfile(f):
+                    os.remove(f)
+
     
 
 if __name__ == "__main__":

@@ -22,23 +22,33 @@ import {
    */
   class MyComponent extends StreamlitComponentBase<State> {
     public state = { numClicks: 0, isFocused: false }
-    public audio = new Audio(Osoon)
-  
+    public audio = new Audio(Osoon);
+    
     public render = (): ReactNode => {
+      //console.log(this.audio.src);
       // Arguments that are passed to the plugin in Python are accessible
       // via `this.props.args`. Here, we access the "name" arg.
       const name = this.props.args["name"]
-      const b64 = this.props.args["audio"]
-      var audioElement = new Audio();
-      audioElement.src = "data:audio/wav;base64," + b64
+      const fileName = this.props.args["audio"]
+      if (fileName === "sample") {
+        //this.audio.src = "./audio/3321821.wav" 
+         const newAudio = new Audio(require("./audio/3321821.wav"));
+         this.audio = newAudio;
+        //  block of code to be executed if the condition is true
+      } else {
+        const newAudio = new Audio(require("./audio/" + fileName));
+        this.audio = newAudio;
+        //  block of code to be executed if the condition is false
+      }
+      console.log(this.audio.src);
       //debugger;
       // var audioElement = document.createElement("audio");
       // const audioBuffer = createBuffer(audio, { sampleRate: 16000 });
       // const blob = new Blob([audioBuffer], { type: "audio/wav" });
       // audioElement.src = window.URL.createObjectURL(blob);
-      this.audio = audioElement;
+      //this.audio = audioElement;
       //debugger;
-      console.log(audioElement.src)      
+      //console.log(audioElement.src)      
       
       // const LENGTH = 2000;
 
