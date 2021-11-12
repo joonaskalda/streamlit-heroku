@@ -137,13 +137,10 @@ def stream_sample():
     sound = pydub.AudioSegment.from_wav(file_name)
     sound = sound.set_channels(1).set_frame_rate(16000)
     audio = np.array(sound.get_array_of_samples())/32768
+
     #enc=base64.b64encode(open(file_name, "rb").read())
     last_rows = np.zeros((1,1))
     chart = st.line_chart(last_rows)
-    text_output = st.empty()
-
-
-    streaming_decoder = StreamingDecoder(model)
     frame_number = 0
 
     #p = multiprocessing.Process(target=playsound.playsound, args=(file_name,)) 
@@ -159,7 +156,7 @@ def stream_sample():
             #     time.sleep(0.1)
             start = timeit.default_timer()
             
-            for probs in streaming_decoder.process_audio(audio[i: i+1000]):
+            for probs in st.session_state.model.process_audio(audio[i: i+1000]):
                 new_rows = np.zeros((1, 1))
                 new_rows[0,0] = probs[1].detach().numpy()
                 chart.add_rows(new_rows)
@@ -242,7 +239,7 @@ def stream_mic():
                 #text_output.markdown(f"burh{ct}")
                 for i in range(0, len(buffer), 1000):
 
-                    for probs in streaming_decoder.process_audio(buffer[i: i+1000]):
+                    for probs in st.session_state.model.process_audio(buffer[i: i+1000]):
                         new_rows = np.zeros((1, 1))
                         new_rows[0,0] = probs[1].detach().numpy()
 
@@ -253,7 +250,14 @@ def stream_mic():
         else:
             status_indicator.write("AudioReciver is not set. Abort.")
             break
-
+file_changed = False
+def upload_file():
+    global file_changed
+    file_changed = True
+if 'upload' not in st.session_state:
+    st.session_state['upload'] = 'value'
+if 'model' not in st.session_state:
+    st.session_state['model'] = StreamingDecoder(model)
 
 def stream_upload():
     #global upload_counter
@@ -271,52 +275,57 @@ def stream_upload():
     # name_input = st.text_input("Enter a name", value="Streamlit")
 
 
-    uploaded_file = st.file_uploader("Choose a file")
+    uploaded_file = st.file_uploader("Choose a file", on_change=upload_file())
+    #if uploaded_file is not None
+    #was_clicked = my_component(name="test",audio = file_name, key="foo")
     if uploaded_file is not None:
-        #upload_counter+=1
-        path = build_dir + "/audio"
-        current_uploads = []
-        for f in os.listdir(path):
-            current_uploads.append(f.split(".")[0])
-        i = 0
-        while True:
-            if str(i) not in current_uploads:
-                new_name = str(i)
-                break
-            i+=1
+        if (uploaded_file.name != st.session_state['upload']):
+            st.session_state['upload'] = uploaded_file.name
+            #upload_counter+=1
+            
+            path = build_dir + "/audio"
+            current_uploads = []
+            for f in os.listdir(path):
+                current_uploads.append(f.split(".")[0])
+            i = 0
+            while True:
+                if str(i) not in current_uploads:
+                    new_name = str(i)
+                    break
+                i+=1
 
-        sound = pydub.AudioSegment.from_wav(uploaded_file)
-        sound = sound.set_channels(1).set_frame_rate(16000)
-        #only consider first minute of the file for uploads
-        sound = sound[:60*1000]
-        audio = np.array(sound.get_array_of_samples())/32768
+            sound = pydub.AudioSegment.from_wav(uploaded_file)
+            sound = sound.set_channels(1).set_frame_rate(16000)
+            #only consider first minute of the file for uploads
+            sound = sound[:60*1000]
+            audio = np.array(sound.get_array_of_samples())/32768
 
-        file_name = new_name + ".wav"
-        save_location = build_dir +"/audio/"+ file_name
-        sound.export(save_location, format="wav")
-       
-        last_rows = np.zeros((1,1))
-        chart = st.line_chart(last_rows)
-        text_output = st.empty()
+            file_name = new_name + ".wav"
+            save_location = build_dir +"/audio/"+ file_name
+            sound = (sound[:2000]-1000) + sound
+            sound.export(save_location, format="wav")
 
-
-        streaming_decoder = StreamingDecoder(model)
-        frame_number = 0
-
+            st.session_state['file_name'] = file_name
+            st.session_state['audio'] = audio
         #p = multiprocessing.Process(target=playsound.playsound, args=(file_name,)) 
 
         #play_obj = wave_obj.play()
-
+        file_name = st.session_state['file_name']
         start_0 = timeit.default_timer()
-        was_clicked = my_component(name="test",audio = file_name, key="foo")
+        was_clicked = my_component(name="test2",audio = file_name)
         
         if was_clicked:
-            for i in range(0, len(audio), 1000):
+            #streaming_decoder = StreamingDecoder(model)
+            frame_number = 0
+            last_rows = np.zeros((1,1))
+            chart = st.line_chart(last_rows)
+            #audio = st.session_state['audio']
+            for i in range(0, len(st.session_state.audio), 1000):
                 # while (num_clicks%2 == 0):
                 #     time.sleep(0.1)
                 start = timeit.default_timer()
                 
-                for probs in streaming_decoder.process_audio(audio[i: i+1000]):
+                for probs in st.session_state.model.process_audio(st.session_state.audio[i: i+1000]):
                     new_rows = np.zeros((1, 1))
                     new_rows[0,0] = probs[1].detach().numpy()
                     chart.add_rows(new_rows)
@@ -335,7 +344,7 @@ def main():
     st.header("Demo of Collar-Aware Training for Speaker Change Detection")
     st.markdown("The model uses a multi-layer LSTM on top of pre-trained speech embeddings, and a final softmax layer. The model uses a step size of 100 ms (i.e., it outputs 10 decisions per second). The model is implemented in Pytorch while this demo was built using Streamlit.")
     st.markdown("The model is trained using a special version of cross-entropy training which tolerates small errors in the hypothesized speaker change timestamps. Due to this, the softmax outputs of the trained model are very peaky and do not require any local maxima tracking for extracting the final speaker turn points. This makes the model suitable for online appications.")
-    st.markdown("This demo visualizes the output of the model for an audio source. The audio source can be either a sample file, a microphone or an uploaded file.")
+    st.markdown("This demo visualizes the output of the model for an audio source. The audio source can be either a sample file, a microphone or an uploaded file, first 60 seconds of which is used.")
     option_1 = 'A sample file'
     option_2 = 'A microphone'
     option_3 = 'An uploaded .wav file'
